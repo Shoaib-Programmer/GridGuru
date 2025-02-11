@@ -1,4 +1,3 @@
-Here’s an expanded, academically rigorous `README.md` for your **Grid Guru** project, structured to meet your requirements:
 
 ---
 
@@ -60,7 +59,7 @@ brew install gtk+3
 git clone https://github.com/Shoaib-Programmer/GridGuru.git
 cd GridGuru
 make        # Compile
-./grid_guru # Run
+./sudoku_solver # Run
 ```
 
 ---
@@ -76,12 +75,12 @@ make        # Compile
 ### `src/sudoku.c`  
 - **Purpose**: Core Sudoku logic.  
 - **Functions**:  
-  - `is_valid()`: Checks row, column, and 3x3 subgrid constraints.  
+  - `isValid()`: Checks row, column, and 3x3 subgrid constraints.  
   - `solveSudoku()`: Recursive backtracking implementation.  
 - **Algorithm**: Prioritizes empty cells dynamically (no fixed order) for efficiency.  
 
 ### `src/sudoku.h`  
-- Header file declaring function prototypes (`is_valid`, `solveSudoku`) and constants (`SIZE=9`).  
+- Header file declaring function prototypes (`isValid`, `solveSudoku`) and constants (`SIZE=9`).  
 
 ### `Makefile`  
 - **Build Automation**: Compiles `main.c` and `sudoku.c` into `grid_guru`.  
@@ -118,7 +117,7 @@ make        # Compile
 
 ### 4. **Input Validation**  
 - **Sanitization**: In `get_grid_from_entries()`, invalid characters are coerced to `0`.  
-- **Pre-Solve Check**: `is_valid()` ensures no duplicates before invoking the solver.  
+- **Pre-Solve Check**: `isValid()` ensures no duplicates before invoking the solver.  
 
 ---
 

@@ -2,22 +2,69 @@
 #include <stdbool.h>
 #include <gtk/gtk.h>
 #include "sudoku.h"
+#include <libgen.h> // For dirname()
+#include <unistd.h> // For readlink()
+#include <limits.h> // For PATH_MAX
 
 #define SIZE 9
 
-GtkWidget *entries[SIZE][SIZE]; // Array to hold the entry widgets
+GtkWidget *entries[SIZE][SIZE];
 GtkWidget *solve_button, *back_button, *reset_button;
-GtkWidget *label;             // Label to show messages (e.g., "No solution exists.")
-int initial_grid[SIZE][SIZE]; // Store initial grid for reset functionality
+GtkWidget *label;
+int initial_grid[SIZE][SIZE];
+
+// Fallback CSS paths
+#define INSTALL_PREFIX "/usr/local" // Defined here or via Makefile
+#define RELATIVE_CSS_PATH "resources/styles.css"
 
 void on_solve_button_clicked(GtkWidget *widget, gpointer data);
 void on_reset_button_clicked(GtkWidget *widget, gpointer data);
 void on_back_button_clicked(GtkWidget *widget, gpointer data);
+void store_initial_grid(int grid[SIZE][SIZE]);
+gboolean clear_status_message(); // Change to match definition
+
+void load_css()
+{
+    GtkCssProvider *provider = gtk_css_provider_new();
+    GError *error = NULL;
+    gchar *css_path = NULL;
+
+    // 1. Try relative path first (for development)
+    if (g_file_test(RELATIVE_CSS_PATH, G_FILE_TEST_EXISTS))
+    {
+        css_path = g_strdup(RELATIVE_CSS_PATH);
+    }
+    // 2. Try installed location
+    else
+    {
+        css_path = g_strdup_printf("%s/share/grid-guru/resources/styles.css", INSTALL_PREFIX);
+    }
+
+    if (!gtk_css_provider_load_from_path(provider, css_path, &error))
+    {
+        g_printerr("CSS loading failed: %s\n", error ? error->message : "Unknown error");
+        if (error)
+            g_error_free(error);
+        g_free(css_path);
+        return;
+    }
+
+    GdkScreen *screen = gdk_screen_get_default();
+    gtk_style_context_add_provider_for_screen(
+        screen,
+        GTK_STYLE_PROVIDER(provider),
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+    g_free(css_path);
+}
 
 // Function to get the Sudoku grid from the GTK entries
-void get_grid_from_entries(int grid[SIZE][SIZE]) {
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
+void get_grid_from_entries(int grid[SIZE][SIZE])
+{
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
             const gchar *text = gtk_entry_get_text(GTK_ENTRY(entries[i][j]));
             grid[i][j] = (text[0] == '\0' || text[0] < '1' || text[0] > '9') ? 0 : text[0] - '0';
         }
@@ -25,115 +72,218 @@ void get_grid_from_entries(int grid[SIZE][SIZE]) {
 }
 
 // Function to display the grid in the GTK entry widgets
-void set_grid_in_entries(int grid[SIZE][SIZE]) {
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
+void set_grid_in_entries(int grid[SIZE][SIZE])
+{
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
             gchar text[2] = {grid[i][j] ? grid[i][j] + '0' : '\0', '\0'};
             gtk_entry_set_text(GTK_ENTRY(entries[i][j]), text);
         }
     }
 }
 
-// Function to create the GUI window
-GtkWidget *create_main_window() {
-    GtkWidget *window, *grid;
-    GtkWidget *hbox, *vbox;
+static guint status_timeout_id = 0;
+
+void set_status_message(const char *message, const char *style_class)
+{
+    // Clear previous timeout
+    if (status_timeout_id > 0)
+    {
+        g_source_remove(status_timeout_id);
+        status_timeout_id = 0;
+    }
+
+    // Clear existing classes
+    GtkStyleContext *context = gtk_widget_get_style_context(label);
+    gtk_style_context_remove_class(context, "success");
+    gtk_style_context_remove_class(context, "error");
+
+    // Set new message and class
+    gtk_label_set_text(GTK_LABEL(label), message);
+    if (style_class)
+    {
+        gtk_style_context_add_class(context, style_class);
+    }
+
+    // Set timeout to clear message
+    status_timeout_id = g_timeout_add_seconds(3, (GSourceFunc)clear_status_message, NULL);
+}
+
+
+gboolean clear_status_message()
+{
+    gtk_label_set_text(GTK_LABEL(label), "");
+    GtkStyleContext *context = gtk_widget_get_style_context(label);
+    gtk_style_context_remove_class(context, "success");
+    gtk_style_context_remove_class(context, "error");
+    status_timeout_id = 0;
+    return G_SOURCE_REMOVE;
+}
+
+// Function to create the GUI window (CSS-ready version)
+GtkWidget *create_main_window()
+{
+    GtkWidget *window, *grid, *title;
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Sudoku Solver");
-    gtk_window_set_default_size(GTK_WINDOW(window), 450, 550);
+    gtk_window_set_default_size(GTK_WINDOW(window), 500, 600);
+    gtk_widget_set_name(window, "main-window"); // CSS ID for main window
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
+    // Main vertical container
+    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_container_add(GTK_CONTAINER(window), main_box);
+
+    // Title label with CSS class
+    title = gtk_label_new("SUDOKU SOLVER");
+    gtk_widget_set_name(title, "app-title");
+    gtk_label_set_xalign(GTK_LABEL(title), 0.5); // Center align
+    gtk_box_pack_start(GTK_BOX(main_box), title, FALSE, FALSE, 15);
+
+    // Sudoku grid container
     grid = gtk_grid_new();
-    gtk_container_add(GTK_CONTAINER(window), grid);
+    gtk_widget_set_name(grid, "sudoku-grid");
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 2);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 2);
+    gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(main_box), grid, TRUE, TRUE, 20);
 
-    // Create a label to display messages (like "No solution exists")
-    label = gtk_label_new("");
-    gtk_grid_attach(GTK_GRID(grid), label, 0, SIZE, 9, 1);
+    // Status label with initial CSS class
+    label = gtk_label_new("Enter your puzzle and click Solve!");
+    gtk_widget_set_name(label, "status-label");
+    gtk_label_set_xalign(GTK_LABEL(label), 0.5);
+    gtk_box_pack_start(GTK_BOX(main_box), label, FALSE, FALSE, 10);
 
-    // Create the grid of entry widgets (9x9)
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
+    // Create Sudoku cells with proper CSS targeting
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
             entries[i][j] = gtk_entry_new();
-            gtk_entry_set_width_chars(GTK_ENTRY(entries[i][j]), 2);
+
+            // Base CSS class for all cells
+            gtk_widget_set_name(entries[i][j], "sudoku-cell");
+
+            // Alternate block styling
+            if ((i / 3 + j / 3) % 2 == 0)
+            {
+                gtk_style_context_add_class(
+                    gtk_widget_get_style_context(entries[i][j]),
+                    "alternate-block");
+            }
+
+            // Special CSS classes for borders
+            if (j % 3 == 2 && j != 8)
+            {
+                gtk_style_context_add_class(
+                    gtk_widget_get_style_context(entries[i][j]),
+                    "right-border");
+            }
+
+            if (i % 3 == 2 && i != 8)
+            {
+                gtk_style_context_add_class(
+                    gtk_widget_get_style_context(entries[i][j]),
+                    "bottom-border");
+            }
+
+            // Cell properties
+            gtk_entry_set_alignment(GTK_ENTRY(entries[i][j]), 0.5);
+            gtk_widget_set_hexpand(entries[i][j], TRUE);
+            gtk_widget_set_vexpand(entries[i][j], TRUE);
             gtk_entry_set_max_length(GTK_ENTRY(entries[i][j]), 1);
-            if ((i / 3 + j / 3) % 2 == 0) {
-                gtk_widget_override_background_color(entries[i][j], GTK_STATE_FLAG_NORMAL, &(GdkRGBA){0.9, 0.9, 0.9, 1.0});
-            }
-            // Add border to separate the 9 sub-grids
-            if (i % 3 == 2 || j % 3 == 2) {
-                gtk_widget_set_margin_end(entries[i][j], 2);
-                gtk_widget_set_margin_bottom(entries[i][j], 2);
-            }
+
             gtk_grid_attach(GTK_GRID(grid), entries[i][j], j, i, 1, 1);
         }
     }
 
-    // Solve button
+    // Button container with CSS ID
+    GtkWidget *button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_widget_set_name(button_box, "button-container");
+    gtk_box_set_homogeneous(GTK_BOX(button_box), TRUE);
+    gtk_box_pack_start(GTK_BOX(main_box), button_box, FALSE, FALSE, 15);
+
+    // Buttons with CSS IDs
     solve_button = gtk_button_new_with_label("Solve");
-    g_signal_connect(solve_button, "clicked", G_CALLBACK(on_solve_button_clicked), NULL);
-    gtk_grid_attach(GTK_GRID(grid), solve_button, 0, SIZE + 1, 3, 1);
+    gtk_widget_set_name(solve_button, "solve-button");
+    gtk_box_pack_start(GTK_BOX(button_box), solve_button, TRUE, TRUE, 0);
 
-    // Reset button
     reset_button = gtk_button_new_with_label("Reset");
-    g_signal_connect(reset_button, "clicked", G_CALLBACK(on_reset_button_clicked), NULL);
-    gtk_grid_attach(GTK_GRID(grid), reset_button, 3, SIZE + 1, 3, 1);
+    gtk_widget_set_name(reset_button, "reset-button");
+    gtk_box_pack_start(GTK_BOX(button_box), reset_button, TRUE, TRUE, 0);
 
-    // Back button (hidden initially)
     back_button = gtk_button_new_with_label("Back");
+    gtk_widget_set_name(back_button, "back-button");
+    gtk_box_pack_start(GTK_BOX(button_box), back_button, TRUE, TRUE, 0);
+    gtk_widget_set_visible(back_button, FALSE);
+
+    // Connect signals
+    g_signal_connect(solve_button, "clicked", G_CALLBACK(on_solve_button_clicked), NULL);
+    g_signal_connect(reset_button, "clicked", G_CALLBACK(on_reset_button_clicked), NULL);
     g_signal_connect(back_button, "clicked", G_CALLBACK(on_back_button_clicked), NULL);
-    gtk_grid_attach(GTK_GRID(grid), back_button, 6, SIZE + 1, 3, 1);
-    gtk_widget_set_visible(back_button, FALSE); // Hide initially
 
     return window;
 }
 
 // Callback function for the "Solve" button
-void on_solve_button_clicked(GtkWidget *widget, gpointer data) {
-    (void)widget;
-    (void)data;
+GtkWidget *window; // Declare window as a global variable
+
+void on_solve_button_clicked(GtkWidget *widget, gpointer data)
+{
     int grid[SIZE][SIZE];
-
-    // Get grid data from the GTK entries
     get_grid_from_entries(grid);
+    store_initial_grid(grid);
 
-    // Save the user's input as the new initial state
-    store_initial_grid(grid); // <-- Added this line
-
-    // Check if the grid is valid
-    if (!is_valid(grid)) {
-        gtk_label_set_text(GTK_LABEL(label), "Invalid Sudoku grid.");
+    if (!isValid(grid))
+    {
+        set_status_message("Invalid Sudoku grid!", "error");
         return;
     }
 
-    // Solve the Sudoku puzzle
-    if (solveSudoku(grid)) {
-        // Display the solution in the entries
-        set_grid_in_entries(grid);
-        gtk_widget_set_visible(solve_button, FALSE); // Hide solve button
-        gtk_widget_set_visible(back_button, TRUE);   // Show back button
-        gtk_label_set_text(GTK_LABEL(label), "Solution found!");
-    } else {
-        gtk_label_set_text(GTK_LABEL(label), "No solution exists.");
+    // Make a copy for solving
+    int solve_grid[SIZE][SIZE];
+    memcpy(solve_grid, grid, sizeof(grid[0][0]) * SIZE * SIZE);
+
+    if (solveSudoku(solve_grid))
+    {
+        set_grid_in_entries(solve_grid); // Update with solved grid
+        gtk_widget_set_visible(solve_button, FALSE);
+    (void)widget; // Mark unused parameter
+    (void)data;   // Mark unused parameter
+        gtk_widget_set_visible(back_button, TRUE);
+        set_status_message("Solution found!", "success");
+
+        // Force UI refresh
+        gtk_widget_queue_draw(gtk_widget_get_parent(window));
+    }
+    else
+    {
+        set_status_message("No solution exists.", "error");
     }
 }
 
 // Callback for the "Back" button
-void on_back_button_clicked(GtkWidget *widget, gpointer data) {
+void on_back_button_clicked(GtkWidget *widget, gpointer data)
+{
     (void)widget;
     (void)data;
     set_grid_in_entries(initial_grid);          // Set the board to initial state
     gtk_widget_set_visible(solve_button, TRUE); // Show solve button
     gtk_widget_set_visible(back_button, FALSE); // Hide back button
     gtk_label_set_text(GTK_LABEL(label), "");   // Clear the label
+
+    // Clear status classes
+    GtkStyleContext *context = gtk_widget_get_style_context(label);
+    gtk_style_context_remove_class(context, "success");
+    gtk_style_context_remove_class(context, "error");
 }
 
-// main.c (updated sections)
-
-// ...
-
 // Callback for the "Reset" button
-void on_reset_button_clicked(GtkWidget *widget, gpointer data) {
+void on_reset_button_clicked(GtkWidget *widget, gpointer data)
+{
     (void)widget;
     (void)data;
     int grid[SIZE][SIZE] = {0}; // Reset to all zeros
@@ -142,16 +292,23 @@ void on_reset_button_clicked(GtkWidget *widget, gpointer data) {
 }
 
 // Store the initial state of the grid for the "Back" button
-void store_initial_grid(int grid[SIZE][SIZE]) { // <-- Changed to take a parameter
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
+void store_initial_grid(int grid[SIZE][SIZE])
+{ // <-- Changed to take a parameter
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
             initial_grid[i][j] = grid[i][j];
         }
     }
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     gtk_init(&argc, &argv);
+
+    // Load CSS before creating any widgets
+    load_css();
 
     // Initialize `initial_grid` with the predefined board
     int initial_state[SIZE][SIZE] = {
@@ -166,8 +323,10 @@ int main(int argc, char *argv[]) {
         {0, 0, 0, 0, 8, 0, 0, 7, 9}};
 
     // Save the predefined board to `initial_grid`
-    for (int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
+    for (int i = 0; i < SIZE; i++)
+    {
+        for (int j = 0; j < SIZE; j++)
+        {
             initial_grid[i][j] = initial_state[i][j];
         }
     }

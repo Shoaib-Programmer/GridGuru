@@ -3,11 +3,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#define SIZE 9
+#define SIZE 9 
 
 
 // Check if the current Sudoku grid is valid
-bool is_valid(int grid[SIZE][SIZE]) {
+bool isValid(int grid[SIZE][SIZE]) {
     // Check each row
     for (int i = 0; i < SIZE; i++) {
         bool used[SIZE + 1] = {false}; // Array to track used numbers
@@ -82,7 +82,7 @@ bool solveSudoku(int grid[SIZE][SIZE]) {
 
     // Try numbers 1 through 9
     for (int num = 1; num <= 9; num++) {
-        if (isValid(grid, row, col, num)) {
+        if (isValid(grid)) {
             grid[row][col] = num;
 
             // Recurse with this choice

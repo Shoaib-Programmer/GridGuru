@@ -1,0 +1,166 @@
+/* resources/styles.css */
+/* Modern Sudoku Solver Theme - Clean & Professional */
+
+/* ===== Base Styles ===== */
+window {
+  background-color: #e9edf1; /* Slightly darker background for better contrast */
+  font-family: "Inter", sans-serif;
+  padding: 24px;
+}
+
+/* ===== Header Section ===== */
+#app-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #0d2b4a; /* Darker title color */
+  margin-bottom: 24px;
+  -gtk-icon-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* GTK-compatible text shadow */
+}
+
+/* ===== Sudoku Grid Styling ===== */
+/* Target all entry widgets in the grid */
+GtkGrid > GtkEntry {
+  font-size: 18px;
+  font-weight: 500;
+  color: #2d3436;
+  padding: 12px;
+  border: 1px solid #ced4da;
+  background: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 3x3 block borders */
+GtkGrid > GtkEntry:nth-child(3n) {
+  border-right: 2px solid #4a90e2; /* Right border every 3rd cell */
+}
+
+GtkGrid > GtkEntry:nth-child(n + 19):nth-child(-n + 27),
+GtkGrid > GtkEntry:nth-child(n + 46):nth-child(-n + 54) {
+  border-bottom: 2px solid #4a90e2; /* Bottom border for 3rd and 6th rows */
+}
+
+/* Alternate subgrid shading */
+GtkGrid > GtkEntry:nth-child(odd):not(:nth-child(9n)) {
+  background-color: #f1f3f5; /* Subtle alternate background */
+}
+
+/* Focus state */
+GtkEntry:focus {
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+  background: white;
+}
+
+/* ===== Button Styles ===== */
+GtkButton {
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  transition: all 0.2s ease;
+  /* text-transform: uppercase; */
+  letter-spacing: 0.5px;
+}
+
+/* Solve Button */
+#solve-button {
+  background: linear-gradient(135deg, #4a90e2, #6366f1);
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+#solve-button:hover {
+  opacity: 0.9;
+  /* transform: translateY(-1px); */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Reset Button */
+#reset-button {
+  background: #f59f00;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Back Button */
+#back-button {
+  background: #495057;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ===== Status Label ===== */
+#status-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 6px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Success State */
+#status-label.success {
+  color: #2b8a3e;
+  background: #d3f9d8;
+}
+
+/* Error State */
+#status-label.error {
+  color: #c92a2a;
+  background: #ffe3e3;
+}
+
+/* ===== Window Decoration ===== */
+GtkWindow {
+  background-image: linear-gradient(160deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+/* Header Area */
+GtkLabel.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3436;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+
+#app-titile {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2d3436;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+
+/* Sudoku Grid Styling */
+#sudoku-cell {
+  font-size: 20px;
+  min-width: 40px;
+  min-height: 40px;
+  border: 1px solid #d1d5db;
+}
+
+#sudoku-cell.right-border {
+  border-right: 2px solid #3b82f6;
+}
+
+#sudoku-cell.bottom-border {
+  border-bottom: 2px solid #3b82f6;
+}
+
+#sudoku-cell.alternate-block {
+  background-color: #f3f4f6;
+}
+
+#sudoku-cell:focus {
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px #bfdbfe;
+}
