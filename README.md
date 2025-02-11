@@ -94,6 +94,7 @@ make        # Compile
   - `initial-state.png`: Default puzzle.  
   - `solved-state.png`: Post-solution.  
   - `invalid-state.png`: Error feedback.  
+  - `nosolution-state.png`: No solution exists.
 
 ---
 
@@ -152,6 +153,6 @@ make        # Compile
 ---
 
 ## License  
-MIT License. See [LICENSE.md](LICENSE.md) for details.  
+MIT License. See [LICENSE](LICENSE) for details.
 
 --- 
