@@ -1,17 +1,26 @@
 // main.c
 #include <stdbool.h>
-#include <gtk/gtk.h>
 #include "sudoku.h"
 #include <libgen.h> // For dirname()
 #include <unistd.h> // For readlink()
 #include <limits.h> // For PATH_MAX
+#include <string.h> // For memcpy
+
+#include <gtk/gtk.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 #define SIZE 9
 
 GtkWidget *entries[SIZE][SIZE];
 GtkWidget *solve_button, *back_button, *reset_button;
 GtkWidget *label;
+GtkWidget *window; // Global main window pointer
 int initial_grid[SIZE][SIZE];
+
+bool dark_mode_enabled = false; // Global flag to track dark mode state
+GtkWidget *theme_icon;
+char *light_icon_path = "resources/dark.png"; // Show dark icon in light mode
+char *dark_icon_path =  "resources/light.png"; // Show light icon in dark mode
 
 // Fallback CSS paths
 #define INSTALL_PREFIX "/usr/local" // Defined here or via Makefile
@@ -23,6 +32,7 @@ void on_back_button_clicked(GtkWidget *widget, gpointer data);
 void store_initial_grid(int grid[SIZE][SIZE]);
 gboolean clear_status_message(); // Change to match definition
 
+// Loads the CSS file for styling
 void load_css()
 {
     GtkCssProvider *provider = gtk_css_provider_new();
@@ -56,6 +66,27 @@ void load_css()
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     g_free(css_path);
+}
+
+// Toggle dark mode by adding or removing the "dark" CSS class from the main window.
+void toggle_dark_mode(GtkWidget *widget, gpointer data)
+{
+    (void)widget;
+    (void)data;
+
+    GtkStyleContext *context = gtk_widget_get_style_context(window);
+    if (dark_mode_enabled)
+    {
+        gtk_style_context_remove_class(context, "dark");
+        gtk_image_set_from_file(GTK_IMAGE(theme_icon), light_icon_path);
+        dark_mode_enabled = false;
+    }
+    else
+    {
+        gtk_style_context_add_class(context, "dark");
+        gtk_image_set_from_file(GTK_IMAGE(theme_icon), dark_icon_path);
+        dark_mode_enabled = true;
+    }
 }
 
 // Function to get the Sudoku grid from the GTK entries
@@ -107,10 +138,9 @@ void set_status_message(const char *message, const char *style_class)
         gtk_style_context_add_class(context, style_class);
     }
 
-    // Set timeout to clear message
+    // Set timeout to clear message after 3 seconds
     status_timeout_id = g_timeout_add_seconds(3, (GSourceFunc)clear_status_message, NULL);
 }
-
 
 gboolean clear_status_message()
 {
@@ -125,8 +155,7 @@ gboolean clear_status_message()
 // Function to create the GUI window (CSS-ready version)
 GtkWidget *create_main_window()
 {
-    GtkWidget *window, *grid, *title;
-
+    // Use the global window variable (do not shadow it locally)
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Sudoku Solver");
     gtk_window_set_default_size(GTK_WINDOW(window), 500, 600);
@@ -137,14 +166,27 @@ GtkWidget *create_main_window()
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_container_add(GTK_CONTAINER(window), main_box);
 
-    // Title label with CSS class
-    title = gtk_label_new("SUDOKU SOLVER");
+    // Create header box for title and theme toggle
+    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+    gtk_widget_set_name(header_box, "header-box");
+    gtk_box_pack_start(GTK_BOX(main_box), header_box, FALSE, FALSE, 15);
+
+    // Add title to header box
+    GtkWidget *title = gtk_label_new("SUDOKU SOLVER");
     gtk_widget_set_name(title, "app-title");
-    gtk_label_set_xalign(GTK_LABEL(title), 0.5); // Center align
-    gtk_box_pack_start(GTK_BOX(main_box), title, FALSE, FALSE, 15);
+    gtk_label_set_xalign(GTK_LABEL(title), 0.5);
+    gtk_box_pack_start(GTK_BOX(header_box), title, TRUE, TRUE, 0);
+
+    // Create theme toggle button with icon
+    GtkWidget *toggle_dark_button = gtk_button_new();
+    gtk_widget_set_name(toggle_dark_button, "toggle-dark-button");
+    theme_icon = gtk_image_new_from_file(light_icon_path);
+    gtk_button_set_image(GTK_BUTTON(toggle_dark_button), theme_icon);
+    gtk_box_pack_end(GTK_BOX(header_box), toggle_dark_button, FALSE, FALSE, 0);
+    g_signal_connect(toggle_dark_button, "clicked", G_CALLBACK(toggle_dark_mode), NULL);
 
     // Sudoku grid container
-    grid = gtk_grid_new();
+    GtkWidget *grid = gtk_grid_new();
     gtk_widget_set_name(grid, "sudoku-grid");
     gtk_grid_set_row_spacing(GTK_GRID(grid), 2);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 2);
@@ -170,24 +212,17 @@ GtkWidget *create_main_window()
             // Alternate block styling
             if ((i / 3 + j / 3) % 2 == 0)
             {
-                gtk_style_context_add_class(
-                    gtk_widget_get_style_context(entries[i][j]),
-                    "alternate-block");
+                gtk_style_context_add_class(gtk_widget_get_style_context(entries[i][j]), "alternate-block");
             }
 
             // Special CSS classes for borders
             if (j % 3 == 2 && j != 8)
             {
-                gtk_style_context_add_class(
-                    gtk_widget_get_style_context(entries[i][j]),
-                    "right-border");
+                gtk_style_context_add_class(gtk_widget_get_style_context(entries[i][j]), "right-border");
             }
-
             if (i % 3 == 2 && i != 8)
             {
-                gtk_style_context_add_class(
-                    gtk_widget_get_style_context(entries[i][j]),
-                    "bottom-border");
+                gtk_style_context_add_class(gtk_widget_get_style_context(entries[i][j]), "bottom-border");
             }
 
             // Cell properties
@@ -206,21 +241,23 @@ GtkWidget *create_main_window()
     gtk_box_set_homogeneous(GTK_BOX(button_box), TRUE);
     gtk_box_pack_start(GTK_BOX(main_box), button_box, FALSE, FALSE, 15);
 
-    // Buttons with CSS IDs
+    // Solve Button
     solve_button = gtk_button_new_with_label("Solve");
     gtk_widget_set_name(solve_button, "solve-button");
     gtk_box_pack_start(GTK_BOX(button_box), solve_button, TRUE, TRUE, 0);
 
+    // Reset Button
     reset_button = gtk_button_new_with_label("Reset");
     gtk_widget_set_name(reset_button, "reset-button");
     gtk_box_pack_start(GTK_BOX(button_box), reset_button, TRUE, TRUE, 0);
 
+    // Back Button
     back_button = gtk_button_new_with_label("Back");
     gtk_widget_set_name(back_button, "back-button");
     gtk_box_pack_start(GTK_BOX(button_box), back_button, TRUE, TRUE, 0);
     gtk_widget_set_visible(back_button, FALSE);
 
-    // Connect signals
+    // Connect signals for primary buttons
     g_signal_connect(solve_button, "clicked", G_CALLBACK(on_solve_button_clicked), NULL);
     g_signal_connect(reset_button, "clicked", G_CALLBACK(on_reset_button_clicked), NULL);
     g_signal_connect(back_button, "clicked", G_CALLBACK(on_back_button_clicked), NULL);
@@ -229,8 +266,6 @@ GtkWidget *create_main_window()
 }
 
 // Callback function for the "Solve" button
-GtkWidget *window; // Declare window as a global variable
-
 void on_solve_button_clicked(GtkWidget *widget, gpointer data)
 {
     int grid[SIZE][SIZE];
@@ -251,8 +286,6 @@ void on_solve_button_clicked(GtkWidget *widget, gpointer data)
     {
         set_grid_in_entries(solve_grid); // Update with solved grid
         gtk_widget_set_visible(solve_button, FALSE);
-    (void)widget; // Mark unused parameter
-    (void)data;   // Mark unused parameter
         gtk_widget_set_visible(back_button, TRUE);
         set_status_message("Solution found!", "success");
 
@@ -263,6 +296,9 @@ void on_solve_button_clicked(GtkWidget *widget, gpointer data)
     {
         set_status_message("No solution exists.", "error");
     }
+
+    (void)widget; // Mark unused parameter
+    (void)data;   // Mark unused parameter
 }
 
 // Callback for the "Back" button
@@ -270,10 +306,10 @@ void on_back_button_clicked(GtkWidget *widget, gpointer data)
 {
     (void)widget;
     (void)data;
-    set_grid_in_entries(initial_grid);          // Set the board to initial state
-    gtk_widget_set_visible(solve_button, TRUE); // Show solve button
+    set_grid_in_entries(initial_grid);          // Restore the board to its initial state
+    gtk_widget_set_visible(solve_button, TRUE); // Show solve button again
     gtk_widget_set_visible(back_button, FALSE); // Hide back button
-    gtk_label_set_text(GTK_LABEL(label), "");   // Clear the label
+    gtk_label_set_text(GTK_LABEL(label), "");   // Clear the status label
 
     // Clear status classes
     GtkStyleContext *context = gtk_widget_get_style_context(label);
@@ -286,14 +322,14 @@ void on_reset_button_clicked(GtkWidget *widget, gpointer data)
 {
     (void)widget;
     (void)data;
-    int grid[SIZE][SIZE] = {0}; // Reset to all zeros
+    int grid[SIZE][SIZE] = {0}; // Reset grid to all zeros
     set_grid_in_entries(grid);
     gtk_label_set_text(GTK_LABEL(label), "");
 }
 
 // Store the initial state of the grid for the "Back" button
 void store_initial_grid(int grid[SIZE][SIZE])
-{ // <-- Changed to take a parameter
+{
     for (int i = 0; i < SIZE; i++)
     {
         for (int j = 0; j < SIZE; j++)
@@ -331,16 +367,15 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Create the main window
-    GtkWidget *window = create_main_window();
+    // Create the main window (using the global variable)
+    create_main_window();
 
     // Load the predefined board into the GUI
     set_grid_in_entries(initial_grid);
 
-    // Show the window
+    // Show the window and all its widgets
     gtk_widget_show_all(window);
 
     gtk_main();
-
     return 0;
 }

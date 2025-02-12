@@ -16,6 +16,7 @@ INSTALL_PREFIX = /usr/local
 
 # Combine all flags
 CFLAGS += $(GTK_FLAGS)
+CFLAGS += -DINSTALL_PREFIX=\"$(INSTALL_PREFIX)\"
 LDFLAGS += $(LIBS)
 
 # Ensure directories exist

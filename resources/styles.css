@@ -132,7 +132,7 @@ GtkLabel.title {
   letter-spacing: -0.5px;
 }
 
-#app-titile {
+#app-title {
   font-size: 24px;
   font-weight: 700;
   color: #2d3436;
@@ -163,4 +163,103 @@ GtkLabel.title {
 #sudoku-cell:focus {
   background-color: #ffffff;
   box-shadow: 0 0 0 2px #bfdbfe;
+}
+
+@define-color bg-dark #1e1e2e;
+@define-color text-dark #cdd6f4;
+@define-color border-dark #45475a;
+@define-color accent-dark #89b4fa;
+@define-color alt-bg-dark #313244;
+@define-color error-dark #f38ba8;
+@define-color success-dark #a6e3a1;
+
+/* Dark mode */
+window.dark {
+  background-color: #1e1e2e;
+  color: #cdd6f4;
+}
+
+.dark #app-title {
+  color: #89b4fa;
+}
+
+.dark GtkGrid > GtkEntry {
+  color: @text-dark;
+  background: @alt-bg-dark;
+  border: 1px solid @border-dark;
+}
+
+.dark GtkGrid > GtkEntry:focus {
+  border-color: @accent-dark;
+  background: @bg-dark;
+}
+
+.dark GtkButton {
+  background: @border-dark;
+  color: @text-dark;
+}
+
+.dark #solve-button {
+  background: linear-gradient(135deg, @accent-dark, #74c7ec);
+  color: white;
+}
+
+.dark #reset-button {
+  background: @error-dark;
+}
+
+.dark #back-button {
+  background: @border-dark;
+}
+
+.dark #status-label {
+  background: @alt-bg-dark;
+  color: @text-dark;
+}
+
+.dark #status-label.success {
+  background: #3a6b55;
+  color: #b9f6ca;
+}
+
+.dark #status-label.error {
+  background: #6e2b2b;
+  color: #f8c0c0;
+}
+
+
+/* Header box styling */
+#header-box {
+  margin-bottom: 15px;
+}
+
+/* Theme toggle button styling */
+#toggle-dark-button {
+  padding: 8px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 20px;
+  background: transparent;
+  box-shadow: none;
+  margin-right: 10px;
+}
+
+#toggle-dark-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode specific styles */
+.dark #toggle-dark-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Remove any existing gradient backgrounds */
+#toggle-dark-button {
+  background-image: none;
+}
+
+/* Ensure the button image is properly sized */
+#toggle-dark-button image {
+  min-width: 24px;
+  min-height: 24px;
 }
