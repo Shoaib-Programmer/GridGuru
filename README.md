@@ -134,15 +134,14 @@ make        # Compile
 ## Screenshots  
 | Initial Puzzle | Solved State | Invalid Input | No Solution |  
 |----------------|--------------|---------------|-------------|  
-| ![Initial](resources/initial-state.png) | ![Solved](resources/solved-state.png) | ![Invalid](resources/invalid-state.png) | ![No Solution](resources/nosolution-state.png) |  
+| ![Initial](resources/screenshots/initial-state.png) | ![Solved](resources/screenshots/solved-state.png) | ![Invalid](resources/screenshots/invalid-state.png) | ![No Solution](resources/screenshots/nosolution-state.png) |  
 
 ---
 
 <!-- ## Future Improvements  
 1. **Optimized Solvers**: Implement Dancing Links (Algorithm X) for harder puzzles.  
 2. **Puzzle Generator**: Create random valid Sudokus of varying difficulty.  
-3. **Theme Support**: Dark/light mode toggles.  
-4. **Undo/Redo**: Enhance user experience with action history.  
+3. **Undo/Redo**: Enhance user experience with action history.  
 
 --- -->
 
