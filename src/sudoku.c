@@ -99,7 +99,7 @@ bool solveSudoku(int grid[SIZE][SIZE]) {
 }
 
 // Utility to print the grid with separators
-void printGrid(int grid[SIZE][SIZE]) {
+void printGrid(const int grid[SIZE][SIZE]) {
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
             if (j % 3 == 0 && j != 0) {
