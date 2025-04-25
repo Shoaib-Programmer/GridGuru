@@ -59,7 +59,7 @@ brew install gtk+3
 git clone https://github.com/Shoaib-Programmer/GridGuru.git
 cd GridGuru
 make        # Compile
-./sudoku_solver # Run
+bin/sudoku_solver # Run
 ```
 
 ---
