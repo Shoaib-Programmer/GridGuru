@@ -49,15 +49,17 @@ Grid Guru solves Sudoku puzzles using a backtracking algorithm, rendered through
 
 ### Steps  
 ```bash
+# Clone
+git clone https://github.com/Shoaib-Programmer/GridGuru.git
+cd GridGuru
+
 # Debian/Ubuntu
 sudo apt install build-essential libgtk-3-dev
 
 # macOS (Homebrew)
 brew install gtk+3
 
-# Clone & Build
-git clone https://github.com/Shoaib-Programmer/GridGuru.git
-cd GridGuru
+# Build and Launch
 make        # Compile
 bin/sudoku_solver # Run
 ```
