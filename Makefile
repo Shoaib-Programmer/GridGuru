@@ -1,3 +1,4 @@
+# Makefile written by ChatGPT
 # Final Makefile
 CC = gcc
 CFLAGS = -Wall -Wextra -Wpedantic -I./src

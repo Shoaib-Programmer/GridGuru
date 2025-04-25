@@ -1,16 +1,14 @@
 // main.c
 #include <stdbool.h>
 #include "sudoku.h"
-#include <libgen.h> // For dirname()
-#include <unistd.h> // For readlink()
-#include <limits.h> // For PATH_MAX
-#include <string.h> // For memcpy
+#include <string.h> // For memcpy (https://manual.cs50.io/3/memcpy)
 
 #include <gtk/gtk.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
+#include <gdk-pixbuf/gdk-pixbuf.h> // https://docs.gtk.org/gdk-pixbuf/class.Pixbuf.html
 
 #define SIZE 9
 
+// I've learnt GTK by reading the docs (https://www.gtk.org/docs/), but I've also taken considerable help from ChatGPT
 GtkWidget *entries[SIZE][SIZE];
 GtkWidget *solve_button, *back_button, *reset_button;
 GtkWidget *label;
@@ -32,7 +30,7 @@ void on_back_button_clicked(GtkWidget *widget, gpointer data);
 void store_initial_grid(int grid[SIZE][SIZE]);
 gboolean clear_status_message(); // Change to match definition
 
-// Loads the CSS file for styling
+// Loads the CSS file for styling (by ChatGPT)
 void load_css()
 {
     GtkCssProvider *provider = gtk_css_provider_new();
@@ -68,7 +66,7 @@ void load_css()
     g_free(css_path);
 }
 
-// Toggle dark mode by adding or removing the "dark" CSS class from the main window.
+// Toggle dark mode by adding or removing the "dark" CSS class from the main window. (By ChatGPT)
 void toggle_dark_mode(GtkWidget *widget, gpointer data)
 {
     (void)widget;
