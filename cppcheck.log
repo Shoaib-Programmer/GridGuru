@@ -1,0 +1,3 @@
+src/sudoku.c:102:20: style: Parameter 'grid' can be declared as const array [constParameter]
+void printGrid(int grid[SIZE][SIZE]) {
+                   ^

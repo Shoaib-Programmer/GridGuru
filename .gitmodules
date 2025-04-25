@@ -1,0 +1,3 @@
+[submodule "video-script"]
+	path = video-script
+	url = https://github.com/Shoaib-Programmer/GridGuru-scripts.git
