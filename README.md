@@ -61,7 +61,7 @@ brew install gtk+3
 
 # Build and Launch
 make        # Compile
-bin/sudoku_solver # Run
+bin/grid_guru # Run
 ```
 
 ---
