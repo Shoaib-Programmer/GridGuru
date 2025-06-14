@@ -2,7 +2,7 @@
 ---
 
 # Grid Guru: A Sudoku Solver with GTK GUI  
-**Grid Guru** is a feature-complete Sudoku puzzle solver implemented in C with a GTK-based graphical interface. Designed for both enthusiasts and developers, it combines algorithmic problem-solving with intuitive user interaction. This project emphasizes code clarity, efficient backtracking, and robust error handling while demonstrating practical GUI development in C.
+**Grid Guru** is a feature-complete Sudoku puzzle solver implemented in C with a GTK-based graphical interface. Designed for both enthusiasts and developers, it combines algorithmic problem-solving with intuitive user interaction. This project emphasizes code clarity, efficient backtracking, and robust error handling while demonstrating practical GUI development in C. [Video Demo][https://youtu.be/IhMaIAfpQ_8]
 
 ---
 
